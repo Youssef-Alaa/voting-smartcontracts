@@ -13,7 +13,7 @@ contract Voting{
     	uint timestamp;
     }
     
-    uint public TargetTotalVotes;
+    uint public targetTotalVotes;
     uint public votesNum;
     uint public candidatesNum;
     address public owner;
@@ -23,7 +23,7 @@ contract Voting{
     mapping(address => Voter) voterToDetails;
 
     constructor(uint _targetVotes , address _owner) {
-        TargetTotalVotes = _targetVotes;
+        targetTotalVotes = _targetVotes;
         owner = _owner;
     }
     
@@ -48,7 +48,7 @@ contract Voting{
         _;
     }
     modifier isVoteNotComplete(){
-        require(TargetTotalVotes > votesNum, "Target Total Votes has been reached");
+        require(targetTotalVotes > votesNum, "Target Total Votes has been reached");
         _;
     }
     modifier isCandidate(uint id){
