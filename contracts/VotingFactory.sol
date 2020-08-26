@@ -22,9 +22,9 @@ contract VotingFactory {
         _;
     }
     
-    function createNewCampaign(string memory _name, uint targetVotes) external isOwner() {
+    function createNewCampaign(string memory _name, uint targetVotes, address _owner) external isOwner() {
         Info memory newVoteContract;
-		newVoteContract.contractAddress = address(new Voting(targetVotes, owner));
+		newVoteContract.contractAddress = address(new Voting(targetVotes, _owner));
         newVoteContract.name = _name;
         newVoteContract.timestamp= block.timestamp;
         indexToCampaign[compaignsNum + 1] = newVoteContract;

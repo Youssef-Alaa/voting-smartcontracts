@@ -22,7 +22,7 @@ contract Voting{
     mapping(uint => Candidate) candidates;
     mapping(address => Voter) voterToDetails;
 
-    constructor(uint _targetVotes , address _owner) {
+    constructor(uint _targetVotes, address _owner) {
         targetTotalVotes = _targetVotes;
         owner = _owner;
     }
