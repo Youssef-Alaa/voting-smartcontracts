@@ -24,10 +24,10 @@ contract('VotingFactory', accounts => {
   const creatorAddress = accounts[0];
   const user1 = accounts[1];
   const user2 = accounts[2];
-  const user3 = accounts[3];
+  const campaignOwner = accounts[3];
   const unprivilegedAddress = accounts[4];
   
-  let Voting, VotingFactory;
+  let Voting, Voting2, VotingFactory;
   let targetTotalVotes = 3;
   // before(async () => {
   //   /* before tests */
@@ -39,7 +39,7 @@ contract('VotingFactory', accounts => {
   describe('deploying prerequistes once to run test', async () => {
     it('Deploying contracts', async () => {
       VotingFactory = await _VotingFactory.new({ from: creatorAddress });
-      await VotingFactory.createNewCampaign("testVote", targetTotalVotes, {
+      await VotingFactory.createNewCampaign("testVote", targetTotalVotes, creatorAddress, {
         from: creatorAddress 
       });
       let result = await VotingFactory.getCampaign(1);
@@ -129,6 +129,24 @@ contract('VotingFactory', accounts => {
     });
     it('User can not vote after votes reached', async () => {
       await truffleAssert.reverts(Voting.vote(1, { from: creatorAddress }), "Target Total Votes has been reached");
+    });
+    it('Candidate3 Should got 2 votes', async () => {
+      let candidate = await Voting.getCandidate(3);
+      candidate[3].toNumber().should.be.equal(2);
+    });
+  });
+  describe('New Voting Campaign with different owner', async () => {
+    it('Deploying contract', async () => {
+      await VotingFactory.createNewCampaign("testVote2", targetTotalVotes, campaignOwner, {
+        from: creatorAddress 
+      });
+      let result = await VotingFactory.getCampaign(2);
+      result[1].should.not.be.equal(ZERO_ADDRESS);
+      Voting2 = await _Voting.at(result[1]);
+    });
+    it('Check owner of the campaign', async () => {
+      let owner = await Voting2.owner();
+      owner.should.be.equal(campaignOwner);
     });
   });
 });
