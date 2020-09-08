@@ -28,7 +28,7 @@ function delay(interval)
    }).timeout(interval + 100) // The extra 100ms should guarantee the test will not fail due to exceeded timeout
 };
 
-contract('VotingFactory', accounts => {
+contract('Voting', accounts => {
   /* create named accounts for contract roles */
   const creatorAddress = accounts[0];
   const user1 = accounts[1];
@@ -51,7 +51,6 @@ contract('VotingFactory', accounts => {
   describe('deploying prerequistes once to run test', async () => {
     it('Deploying contracts', async () => {
       VotingFactory = await _VotingFactory.new({ from: creatorAddress });
-      console.log("Deadline:", deadline);
       await VotingFactory.createNewCampaign("testVote", deadline, creatorAddress, true, {
         from: creatorAddress
       });
@@ -158,28 +157,32 @@ contract('VotingFactory', accounts => {
       let tx1 = await Voting.vote(2, { from: user1 });
       let tx2 = await Voting.vote(0, { from: user2 });
       let tx3 = await Voting.vote(2, { from: voter1 });
-      let tx4 = await Voting.vote(2, { from: voter2 });
       let tx5 = await Voting.abstain( { from: voter3 });
       tx1.receipt.status.should.equal(true);
       tx2.receipt.status.should.equal(true);
       tx3.receipt.status.should.equal(true);
-      tx4.receipt.status.should.equal(true);
       tx5.receipt.status.should.equal(true);
     });
     it('User can not vote twice', async () => {
       await truffleAssert.reverts(Voting.vote(1, { from: user1 }), "voter does not exist or have voted before");
     });
-    it('Votes number should equal 4', async () => {
+    it('Votes number should equal 3', async () => {
       let votesNo = await Voting.votesNum();
-      votesNo.toNumber().should.equal(4);
+      votesNo.toNumber().should.equal(3);
     });
-    delay(40000);
-    // it('Finish voting', async () => {
+    // delay(40000);
+    // it('Finishing vote', async () => {
     //   await Voting.finishVoting({ from: creatorAddress });
     //   let voteStatus = await Voting.stage();
     //   console.log(voteStatus);
     //   voteStatus.toNumber().should.be.equal(2);
     // });
+    it('Voting phase should be finished by one more vote', async () => {
+      let tx4 = await Voting.vote(2, { from: voter2 });
+      tx4.receipt.status.should.equal(true);
+      let voteStatus = await Voting.stage();
+      voteStatus.toNumber().should.be.equal(2);
+    });
     it('User can not vote after votes reached', async () => {
       await truffleAssert.reverts(Voting.vote(1, { from: voter4 }), "Not valid in current stage");
     });
@@ -188,23 +191,27 @@ contract('VotingFactory', accounts => {
       console.log(voteStatus);
       voteStatus.toNumber().should.be.equal(2);
     });
-    it('Candidate3 Should got 2 votes', async () => {
+    it('Candidate3 Should got 3 votes', async () => {
       let candidate = await Voting.getCandidate(2);
       candidate[3].toNumber().should.be.equal(3);
     });
+    it('Winner Should return candidate3', async () => {
+      let candidate = await Voting.getWinningCandidate();
+      candidate[0].toNumber().should.be.equal(2);
+    });
   });
-  // describe('New Voting Campaign with different owner', async () => {
-  //   it('Deploying contract', async () => {
-  //     await VotingFactory.createNewCampaign("testVote2", targetTotalVotes, campaignOwner, {
-  //       from: creatorAddress
-  //     });
-  //     let result = await VotingFactory.getCampaign(2);
-  //     result[1].should.not.be.equal(ZERO_ADDRESS);
-  //     Voting2 = await _Voting.at(result[1]);
-  //   });
-  //   it('Check owner of the new campaign', async () => {
-  //     let owner = await Voting2.owner();
-  //     owner.should.be.equal(campaignOwner);
-  //   });
-  // });
+  describe('New Voting Campaign with different owner', async () => {
+    it('Deploying contract', async () => {
+      await VotingFactory.createNewCampaign("testVote", deadline, campaignOwner, false, {
+        from: creatorAddress
+      });
+      let result = await VotingFactory.getCampaign(2);
+      result[1].should.not.be.equal(ZERO_ADDRESS);
+      Voting2 = await _Voting.at(result[1]);
+    });
+    it('Check owner of the new campaign', async () => {
+      let owner = await Voting2.owner();
+      owner.should.be.equal(campaignOwner);
+    });
+  });
 });

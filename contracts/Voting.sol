@@ -94,7 +94,7 @@ contract Voting{
 
     /// @notice Finish voting process
     /// @dev Function should be called by owner and while voting is stopped
-    function finishVoting() external isOwner() validStage(Stage.Vote) {
+    function finishVoting() external isOwner() {
         require(block.timestamp > endTime, "voting time is not finished yet");
         stage = Stage.Finished;
     }
@@ -118,13 +118,15 @@ contract Voting{
         }
         // add new voter
         Voter memory _voter;
+        _voter.exists= true;
         _voter.voted = true;
         _voter.timestamp = block.timestamp;
         voterToDetails[msg.sender] = _voter;
         // increment voternum
         votesNum ++;
         // finish vote if votes for one candidate is > (VoterNum - VoteAbstain)/2 in a threshold Voting process
-        if (thresholdVote && candidates[id].voteNum > ((votersNum - abstainersNum)/2)) {
+        // * 100 is addded to workaround solidity's inability to deal with floats
+        if (thresholdVote && (candidates[id].voteNum * 100) > (((votersNum - abstainersNum) * 100)/2)) {
             stage = Stage.Finished;
         }
     }
@@ -132,6 +134,7 @@ contract Voting{
     function abstain() external validStage(Stage.Vote) isVoter(msg.sender) {
         voterToDetails[msg.sender].abstains = true;
         abstainersNum ++;
+        require(reachedThreshold(), "could not count reached threshold");
     }
 
     /// @notice Get Candidate details by it's Id
@@ -150,5 +153,31 @@ contract Voting{
 
     function candidatesNum() external view returns(uint) {
        return(candidates.length);
+    }
+
+    function getWinningCandidate() external view returns(uint, string memory, string memory, uint) {
+        require(stage == Stage.Finished, "Voting phase has not finished yet" );
+        (uint highestCandidate, uint winningVoteNum) = getHighestCandidate();
+        return(highestCandidate, candidates[highestCandidate].name, candidates[highestCandidate].desc, winningVoteNum);
+    }
+
+    function reachedThreshold() internal returns(bool) {
+        if(thresholdVote) {
+            ( , uint winningVoteNum) = getHighestCandidate();
+            if((winningVoteNum * 100) > (((votersNum - abstainersNum) * 100)/2)) {
+                stage = Stage.Finished;
+            }
+        }
+        return true;
+    }
+
+    function getHighestCandidate() internal view returns (uint highestCandidate, uint winningVoteNum) {
+        for (uint128 p = 0; p < candidates.length; p++) {
+            if (candidates[p].voteNum > winningVoteNum) {
+                winningVoteNum = candidates[p].voteNum;
+                highestCandidate = p;
+            }
+        }
+        require(winningVoteNum > 0);
     }
 }

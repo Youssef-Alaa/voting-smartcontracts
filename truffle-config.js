@@ -1,3 +1,6 @@
+const PrivateKeyProvider = require("truffle-hdwallet-provider");
+const privateKey = "8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63";
+
 /**
  * Use this file to configure your truffle project. It's seeded with some
  * common settings for different networks and features like migrations,
@@ -47,7 +50,12 @@ module.exports = {
      port: 8545,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
     },
-
+    besu: {
+      provider: () => new PrivateKeyProvider(privateKey, "http://localhost:8545"),
+      network_id: "*",
+      gas: "0x1ffffffffffffe",
+      gasPrice: 0
+    },
     // Another network with more advanced options...
     // advanced: {
       // port: 8777,             // Custom port
