@@ -7,134 +7,148 @@ pragma solidity ^0.7.0;
 contract Voting{
     //holds the info of each Candidate that will be voted for
     struct Candidate{
-        bool exists;
         string name;
         string desc;
         uint voteNum;
     }
     //For registring Votes
     struct Voter {
-        uint id;
+        bool exists;
+        bool abstains;
+        bool voted;
     	uint timestamp;
     }
-    
-    uint public targetTotalVotes;
-    uint public votesNum;
-    uint public candidatesNum;
-    address public owner;
-    bool public isVoteStarted;
-    
-    mapping(uint => Candidate) candidates;
-    mapping(address => Voter) voterToDetails;
 
-    constructor(uint _targetVotes, address _owner) {
-        targetTotalVotes = _targetVotes;
+    enum Stage { Init, Vote, Finished }
+    Stage public stage;
+    // uint public targetTotalVotes;
+    uint public votesNum;
+    uint public votersNum;
+    uint public abstainersNum;
+    uint public endTime;
+    address public owner;
+    bool public thresholdVote;
+    Candidate[] candidates;
+    mapping(address => Voter) public voterToDetails;
+
+    constructor(address _owner, uint _endTime, bool _thresholdVote) {
+        require(_endTime > block.timestamp, "Vote end time can not be in the past");
         owner = _owner;
+        stage = Stage.Init;
+        endTime = _endTime;
+        thresholdVote = _thresholdVote;
     }
-    
-    modifier isOwner(){
+
+    modifier validStage(Stage reqStage) {
+        if (block.timestamp > endTime) {
+           stage = Stage.Finished;
+       }
+        require(stage == reqStage, "Not valid in current stage");
+        _;
+    }
+    modifier isOwner() {
         require(msg.sender == owner , "is not owner");
         _;
     }
-    modifier voteStarted(){
-        require(isVoteStarted, "vote is not in progress");
-        _;  
-    }
-    modifier voteStoped(){
-        require(!isVoteStarted, "vote is in progress");
+    modifier isVoter(address newVoter) {
+        require(!voterToDetails[newVoter].voted && voterToDetails[newVoter].exists, "voter does not exist or have voted before");
         _;
     }
-    modifier voteInit(){
-        require(!isVoteStarted && votesNum == 0);
-        _;
-    }
-    modifier isNewVoter(address newVoter){
-        require(voterToDetails[newVoter].id == 0, "you have vote before");
-        _;
-    }
-    modifier isVoteNotComplete(){
-        require(targetTotalVotes > votesNum, "Target Total Votes has been reached");
-        _;
-    }
-    modifier isCandidate(uint id){
-        require(candidates[id].exists, "Candidate does not exist");
-        _;
-    }
-    
+
     /// @notice Add a new candidate to be voted for
     /// @dev Function should be called by owner and before the voting process starts
     /// @param _name Name of Candidate
     /// @param _desc Candidate's Description
-    function addCandidate(string memory _name, string memory _desc) external isOwner() voteInit() {
+    function addCandidate(string memory _name, string memory _desc) external isOwner() validStage(Stage.Init) {
         Candidate memory _candidate;
-        _candidate.exists = true;
         _candidate.name = _name;
         _candidate.desc = _desc;
-        candidates[candidatesNum + 1] = _candidate;
-        candidatesNum ++;
+        candidates.push(_candidate);
     }
-    
+
+    /// @notice Give a certain address the right to vote
+    /// @dev Function should be called by owner and before the voting process starts
+    /// @param voter address of the user to be allowed
+    function addVoter(address voter) external isOwner() {
+        require(!voterToDetails[voter].exists, "voter already exists");
+        voterToDetails[voter].exists = true;
+        votersNum ++;
+    }
+
     /// @notice Edit candidate's name and description
     /// @dev Function should be called by owner and before the voting process starts
     /// @param id ID of existing Candidate
     /// @param _name Changed name of Candidate
     /// @param _desc Changed candidate's description
-    function editCandidate(uint id,string memory _name, string memory _desc) external isOwner() voteInit() isCandidate(id) {
+    function editCandidate(uint id,string memory _name, string memory _desc) external isOwner() validStage(Stage.Init) {
         candidates[id].name = _name;
         candidates[id].desc = _desc;
     }
-    
+
     /// @notice Delete candidate by Id
     /// @dev Function should be called by owner and before the voting process starts
     /// @param id ID of existing Candidate
-    function deleteCandidate(uint id) external isOwner() voteInit() isCandidate(id) {
+    function deleteCandidate(uint id) external isOwner() validStage(Stage.Init) {
         delete(candidates[id]);
-        candidatesNum --;
     }
-    
+
+    /// @notice Finish voting process
+    /// @dev Function should be called by owner and while voting is stopped
+    function finishVoting() external isOwner() validStage(Stage.Vote) {
+        require(block.timestamp > endTime, "voting time is not finished yet");
+        stage = Stage.Finished;
+    }
+
     /// @notice Allow voters to start voting
     /// @dev Function should be called by owner and while voting is stopped
-    function startVoting() external isOwner() voteStoped() {
-        isVoteStarted = true;
+    function startVoting() external isOwner() validStage(Stage.Init) {
+        stage = Stage.Vote;
     }
-    
-    /// @notice Stops the voting process
-    /// @dev Function should be called by owner and while voting has started
-    function stopVoting() external isOwner() voteStarted() {
-        isVoteStarted = false;
-    }
-    
+
     /// @notice Vote for a candidate
     /** @dev Function should be called after the voting process has started, targetTotalVotes has not been reached,
     The voter hasn't voted before and is voting to an existing candidate */
     /// @param id ID of existing Candidate
-    function vote(uint id) external voteStarted() isVoteNotComplete() isNewVoter(msg.sender) isCandidate(id) {
+    function vote(uint id) external validStage(Stage.Vote) isVoter(msg.sender) {
         candidates[id].voteNum ++;
+        //checks if the voter abstained before;
+        if(voterToDetails[msg.sender].abstains) {
+            voterToDetails[msg.sender].abstains = false;
+            abstainersNum --;
+        }
         // add new voter
         Voter memory _voter;
-        _voter.id = votesNum + 1;
+        _voter.voted = true;
         _voter.timestamp = block.timestamp;
         voterToDetails[msg.sender] = _voter;
         // increment voternum
         votesNum ++;
+        // finish vote if votes for one candidate is > (VoterNum - VoteAbstain)/2 in a threshold Voting process
+        if (thresholdVote && candidates[id].voteNum > ((votersNum - abstainersNum)/2)) {
+            stage = Stage.Finished;
+        }
     }
-    
+
+    function abstain() external validStage(Stage.Vote) isVoter(msg.sender) {
+        voterToDetails[msg.sender].abstains = true;
+        abstainersNum ++;
+    }
+
     /// @notice Get Candidate details by it's Id
     /// @param id Id of the Candidate
     /// @return Candidate's ID
     /// @return Candidate's name
     /// @return Candidate's description
-    /// @return Number of votes that has been voted for this candidate.
-    function getCandidate(uint id) external view isCandidate(id) returns(uint, string memory, string memory, uint) {
-        return(id, candidates[id].name, candidates[id].desc, candidates[id].voteNum);
+    /// @return Candidate's votes number
+    function getCandidate(uint id) external view returns(uint, string memory, string memory, uint) {
+        if (stage == Stage.Finished) {
+            return(id, candidates[id].name, candidates[id].desc, candidates[id].voteNum);
+        } else {
+            return(id, candidates[id].name, candidates[id].desc, 0);
+        }
     }
-    
-    /// @notice Get voter's info by his address
-    /// @param _voter Voter's address
-    /// @return Voter's address
-    /// @return Voter's id, 0 = hasn't voted, 1 = has voted
-    /// @return Timestamp of when he has voted if he has already voted
-    function getVoter(address _voter) external view returns (address, uint, uint)  {
-        return(_voter, voterToDetails[_voter].id, voterToDetails[_voter].timestamp);
+
+    function candidatesNum() external view returns(uint) {
+       return(candidates.length);
     }
 }

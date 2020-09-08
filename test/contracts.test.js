@@ -13,11 +13,20 @@ const truffleAssert = require('truffle-assertions');
 
 const { ZERO_ADDRESS } = constants;
 
-function capitalize(str) {
-  return str.replace(/\b\w/g, l => l.toUpperCase());
-}
+// function capitalize(str) {
+//   return str.replace(/\b\w/g, l => l.toUpperCase());
+// }
 const _Voting = artifacts.require('Voting');
 const _VotingFactory = artifacts.require('VotingFactory');
+
+function delay(interval) 
+{
+   return it('should delay', done => 
+   {
+      setTimeout(() => done(), interval)
+
+   }).timeout(interval + 100) // The extra 100ms should guarantee the test will not fail due to exceeded timeout
+};
 
 contract('VotingFactory', accounts => {
   /* create named accounts for contract roles */
@@ -25,10 +34,13 @@ contract('VotingFactory', accounts => {
   const user1 = accounts[1];
   const user2 = accounts[2];
   const campaignOwner = accounts[3];
-  const unprivilegedAddress = accounts[4];
-  
+  const voter1 = accounts[4];
+  const voter2 = accounts[5];
+  const voter3 = accounts[6];
+  const voter4 = accounts[7];
+  const deadline = Math.round(Date.now() / 1000) + 30;
   let Voting, Voting2, VotingFactory;
-  let targetTotalVotes = 3;
+
   // before(async () => {
   //   /* before tests */
   // });
@@ -39,8 +51,9 @@ contract('VotingFactory', accounts => {
   describe('deploying prerequistes once to run test', async () => {
     it('Deploying contracts', async () => {
       VotingFactory = await _VotingFactory.new({ from: creatorAddress });
-      await VotingFactory.createNewCampaign("testVote", targetTotalVotes, creatorAddress, {
-        from: creatorAddress 
+      console.log("Deadline:", deadline);
+      await VotingFactory.createNewCampaign("testVote", deadline, creatorAddress, true, {
+        from: creatorAddress
       });
       let result = await VotingFactory.getCampaign(1);
       result[1].should.not.be.equal(ZERO_ADDRESS);
@@ -62,34 +75,31 @@ contract('VotingFactory', accounts => {
       let owner = await Voting.owner();
       owner.should.be.equal(creatorAddress);
     });
-    it('check target total votes', async () => {
-      let totalVotes = await Voting.targetTotalVotes();
-      totalVotes.toNumber().should.equal(targetTotalVotes);
-    });
-    it('Vote should not be started', async () => {
-      let voteStatus = await Voting.isVoteStarted();
-      voteStatus.should.be.equal(false);
-    });
     it('Creator adding Candidates', async () => {
       let tx1 = await Voting.addCandidate("Candidate0", "Candidate0 desc", {
-        from: creatorAddress 
+        from: creatorAddress
       });
       let tx2 = await Voting.addCandidate("Candidate2", "Candidate2 desc", {
-        from: creatorAddress 
+        from: creatorAddress
       });
       let tx3 = await Voting.addCandidate("Candidate3", "Candidate3 desc", {
-        from: creatorAddress 
+        from: creatorAddress
       });
       tx1.receipt.status.should.equal(true);
       tx2.receipt.status.should.equal(true);
       tx3.receipt.status.should.equal(true);
+    });
+    it('Stage Init', async () => {
+      let voteStatus = await Voting.stage();
+      console.log(voteStatus);
+      voteStatus.toNumber().should.be.equal(0);
     });
     it('contract should have 3 candidates', async () => {
       let candidatesNo = await Voting.candidatesNum();
       candidatesNo.toNumber().should.equal(3);
     });
     it('Vote should fail before Voting starts', async () => {
-      await truffleAssert.reverts(Voting.vote(2, { from: user1 }), "vote is not in progress");
+      await truffleAssert.reverts(Voting.vote(2, { from: user1 }), "Not valid in current stage");
     });
     it('Votes number should still equal 0', async () => {
       let votesNo = await Voting.votesNum();
@@ -102,51 +112,99 @@ contract('VotingFactory', accounts => {
       let candidate = await Voting.getCandidate(1);
       candidate[1].should.be.equal("Candidate1");
     });
+    it('Creator Adding voters', async () => {
+      await Voting.addVoter(user1, {
+        from: creatorAddress
+      });
+      await Voting.addVoter(user2, {
+        from: creatorAddress
+      });
+      await Voting.addVoter(voter1, {
+        from: creatorAddress
+      });
+      await Voting.addVoter(voter2, {
+        from: creatorAddress
+      });
+      await Voting.addVoter(voter3, {
+        from: creatorAddress
+      });
+      await Voting.addVoter(voter4, {
+        from: creatorAddress
+      });
+      let voter1exists = await Voting.voterToDetails(user1);
+      voter1exists[0].should.be.equal(true);
+      let voter2exists = await Voting.voterToDetails(user2);
+      voter2exists[0].should.be.equal(true);
+      let voter3exists = await Voting.voterToDetails(voter1);
+      voter3exists[0].should.be.equal(true);
+      let voter4exists = await Voting.voterToDetails(voter2);
+      voter4exists[0].should.be.equal(true);
+      let voter5exists = await Voting.voterToDetails(voter3);
+      voter5exists[0].should.be.equal(true);
+      let voter6exists = await Voting.voterToDetails(voter4);
+      voter6exists[0].should.be.equal(true);
+    });
+    it('Voters number should be 6', async () => {
+      let votersNo = await Voting.votersNum();
+      votersNo.toNumber().should.equal(6);
+    });
     it('Start voting', async () => {
       await Voting.startVoting({ from: creatorAddress });
-      let voteStatus = await Voting.isVoteStarted();
-      voteStatus.should.be.equal(true);
+      let voteStatus = await Voting.stage();
+      console.log(voteStatus);
+      voteStatus.toNumber().should.be.equal(1);
     });
-    it('Vote to non existing candidate should fail', async () => {
-      await truffleAssert.reverts(Voting.vote(0, { from: user1 }), "Candidate does not exist");
-    });
-    it('Regular Votes', async () => {
-      let tx1 = await Voting.vote(2, { from: creatorAddress });
-      let tx2 = await Voting.vote(3, { from: user1 });
+    it('Random 4 Votes and 1 abstain', async () => {
+      let tx1 = await Voting.vote(2, { from: user1 });
+      let tx2 = await Voting.vote(0, { from: user2 });
+      let tx3 = await Voting.vote(2, { from: voter1 });
+      let tx4 = await Voting.vote(2, { from: voter2 });
+      let tx5 = await Voting.abstain( { from: voter3 });
       tx1.receipt.status.should.equal(true);
       tx2.receipt.status.should.equal(true);
+      tx3.receipt.status.should.equal(true);
+      tx4.receipt.status.should.equal(true);
+      tx5.receipt.status.should.equal(true);
     });
     it('User can not vote twice', async () => {
-      await truffleAssert.reverts(Voting.vote(1, { from: creatorAddress }), "you have vote before");
+      await truffleAssert.reverts(Voting.vote(1, { from: user1 }), "voter does not exist or have voted before");
     });
-    it('One more vote', async () => {
-      let tx3 = await Voting.vote(3, { from: user2 });
-      tx3.receipt.status.should.equal(true);
-    });
-    it('Votes number should equal 3', async () => {
+    it('Votes number should equal 4', async () => {
       let votesNo = await Voting.votesNum();
-      votesNo.toNumber().should.equal(3);
+      votesNo.toNumber().should.equal(4);
     });
+    delay(40000);
+    // it('Finish voting', async () => {
+    //   await Voting.finishVoting({ from: creatorAddress });
+    //   let voteStatus = await Voting.stage();
+    //   console.log(voteStatus);
+    //   voteStatus.toNumber().should.be.equal(2);
+    // });
     it('User can not vote after votes reached', async () => {
-      await truffleAssert.reverts(Voting.vote(1, { from: creatorAddress }), "Target Total Votes has been reached");
+      await truffleAssert.reverts(Voting.vote(1, { from: voter4 }), "Not valid in current stage");
+    });
+    it('Voting should be stopped after end time', async () => {
+      let voteStatus = await Voting.stage();
+      console.log(voteStatus);
+      voteStatus.toNumber().should.be.equal(2);
     });
     it('Candidate3 Should got 2 votes', async () => {
-      let candidate = await Voting.getCandidate(3);
-      candidate[3].toNumber().should.be.equal(2);
+      let candidate = await Voting.getCandidate(2);
+      candidate[3].toNumber().should.be.equal(3);
     });
   });
-  describe('New Voting Campaign with different owner', async () => {
-    it('Deploying contract', async () => {
-      await VotingFactory.createNewCampaign("testVote2", targetTotalVotes, campaignOwner, {
-        from: creatorAddress 
-      });
-      let result = await VotingFactory.getCampaign(2);
-      result[1].should.not.be.equal(ZERO_ADDRESS);
-      Voting2 = await _Voting.at(result[1]);
-    });
-    it('Check owner of the campaign', async () => {
-      let owner = await Voting2.owner();
-      owner.should.be.equal(campaignOwner);
-    });
-  });
+  // describe('New Voting Campaign with different owner', async () => {
+  //   it('Deploying contract', async () => {
+  //     await VotingFactory.createNewCampaign("testVote2", targetTotalVotes, campaignOwner, {
+  //       from: creatorAddress
+  //     });
+  //     let result = await VotingFactory.getCampaign(2);
+  //     result[1].should.not.be.equal(ZERO_ADDRESS);
+  //     Voting2 = await _Voting.at(result[1]);
+  //   });
+  //   it('Check owner of the new campaign', async () => {
+  //     let owner = await Voting2.owner();
+  //     owner.should.be.equal(campaignOwner);
+  //   });
+  // });
 });
