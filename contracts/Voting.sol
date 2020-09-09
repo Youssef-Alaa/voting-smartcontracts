@@ -40,9 +40,6 @@ contract Voting{
     }
 
     modifier validStage(Stage reqStage) {
-        if (block.timestamp > endTime) {
-           stage = Stage.Finished;
-       }
         require(stage == reqStage, "Not valid in current stage");
         _;
     }
@@ -155,8 +152,7 @@ contract Voting{
        return(candidates.length);
     }
 
-    function getWinningCandidate() external view returns(uint, string memory, string memory, uint) {
-        require(stage == Stage.Finished, "Voting phase has not finished yet" );
+    function getWinningCandidate() external view validStage(Stage.Finished) returns(uint, string memory, string memory, uint) {
         (uint highestCandidate, uint winningVoteNum) = getHighestCandidate();
         return(highestCandidate, candidates[highestCandidate].name, candidates[highestCandidate].desc, winningVoteNum);
     }
