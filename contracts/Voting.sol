@@ -103,8 +103,7 @@ contract Voting{
     }
 
     /// @notice Vote for a candidate
-    /** @dev Function should be called after the voting process has started, targetTotalVotes has not been reached,
-    The voter hasn't voted before and is voting to an existing candidate */
+    /** @dev Function should be called after the voting process has started and by a registered voter */
     /// @param id ID of existing Candidate
     function vote(uint id) external validStage(Stage.Vote) isVoter(msg.sender) {
         candidates[id].voteNum ++;
@@ -115,7 +114,7 @@ contract Voting{
         }
         // add new voter
         Voter memory _voter;
-        _voter.exists= true;
+        _voter.exists = true;
         _voter.voted = true;
         _voter.timestamp = block.timestamp;
         voterToDetails[msg.sender] = _voter;
@@ -128,6 +127,8 @@ contract Voting{
         }
     }
 
+    /// @notice Abstain from this vote
+    /** @dev Function should be called after the voting process has started and by a registered voter */
     function abstain() external validStage(Stage.Vote) isVoter(msg.sender) {
         voterToDetails[msg.sender].abstains = true;
         abstainersNum ++;
@@ -135,6 +136,8 @@ contract Voting{
     }
 
     /// @notice Get Candidate details by it's Id
+    /** @dev When called in voting phase it will exclude the number of votes for that candidate returning 0,
+        The real number will be returned when called after voting ends */
     /// @param id Id of the Candidate
     /// @return Candidate's ID
     /// @return Candidate's name
@@ -148,10 +151,16 @@ contract Voting{
         }
     }
 
+    /// @notice Get Candidates number
+    /// @return Return the number of registered candidates
     function candidatesNum() external view returns(uint) {
        return(candidates.length);
     }
 
+    /// @return Return id of the winning Candidate
+    /// @return Return name of the winning Candidate
+    /// @return Return description of the winning Candidate
+    /// @return Return Number of votes for the winning Candidate
     function getWinningCandidate() external view validStage(Stage.Finished) returns(uint, string memory, string memory, uint) {
         (uint highestCandidate, uint winningVoteNum) = getHighestCandidate();
         return(highestCandidate, candidates[highestCandidate].name, candidates[highestCandidate].desc, winningVoteNum);
