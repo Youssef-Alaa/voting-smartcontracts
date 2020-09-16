@@ -6,12 +6,12 @@ pragma solidity ^0.7.0;
 /// @dev This contract is not deployed Initially but is created by VotingFactory
 contract Voting{
     //holds the info of each Candidate that will be voted for
-    struct Candidate{
+    struct Candidate {
         string name;
         string desc;
         uint voteNum;
     }
-    //For registring Votes
+    //For registring Voters
     struct Voter {
         bool exists;
         bool abstains;
@@ -109,12 +109,12 @@ contract Voting{
         candidates[id].voteNum ++;
         //checks if the voter abstained before;
         if(voterToDetails[msg.sender].abstains) {
-            voterToDetails[msg.sender].abstains = false;
             abstainersNum --;
         }
         // add new voter
         Voter memory _voter;
         _voter.exists = true;
+        _voter.abstains = false;
         _voter.voted = true;
         _voter.timestamp = block.timestamp;
         voterToDetails[msg.sender] = _voter;
