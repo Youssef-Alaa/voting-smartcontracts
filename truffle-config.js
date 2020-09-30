@@ -51,7 +51,7 @@ module.exports = {
      network_id: "*",       // Any network (default: none)
     },
     besu: {
-      provider: () => new PrivateKeyProvider(privateKey, "http://18.191.104.160:8545"),
+      provider: () => new PrivateKeyProvider(privateKey, "http://3.22.209.234:8545"),
       network_id: "*",
       gas: "0x1ffffffffffffe",
       gasPrice: 0

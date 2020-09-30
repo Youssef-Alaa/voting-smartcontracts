@@ -17,7 +17,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -30,7 +31,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -92,7 +94,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     }
   ],
   "metadata": "{\"compiler\":{\"version\":\"0.7.0+commit.9e61f92b\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"compaignsNum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_name\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"thresholdVote\",\"type\":\"bool\"}],\"name\":\"createNewCampaign\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"getCampaign\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"createNewCampaign(string,uint256,address,bool)\":{\"params\":{\"_name\":\"Name of the voting campaign\",\"_owner\":\"Address of the owner of the voting campaign\",\"endTime\":\"Date in unix time when the vote will end\",\"thresholdVote\":\"bool true=threshold vote, false= not a threshold vote\"}},\"getCampaign(uint256)\":{\"params\":{\"id\":\"Id of the voting campaign\"},\"returns\":{\"_0\":\"Campaign's Id\",\"_1\":\"Campaign's contract Address\",\"_2\":\"Campaign's Name\",\"_3\":\"Campaign's creation timestamp\"}}},\"title\":\"Factory Contract for creating voting campaigns\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"createNewCampaign(string,uint256,address,bool)\":{\"notice\":\"Creates a new voting campaign\"},\"getCampaign(uint256)\":{\"notice\":\"Get Campaign details by it's Id\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/home/youssef/voting-smartcontracts/contracts/VotingFactory.sol\":\"VotingFactory\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/youssef/voting-smartcontracts/contracts/Voting.sol\":{\"keccak256\":\"0xb6b284eff8b7eaa26d4a58cfb4684c00e84d21ed37586af5b4c4abea87770e1c\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://fc900545b69d216e8d3e94788f81538dfd8caa7577ff7b1f188a7ca38c8c18d8\",\"dweb:/ipfs/QmT5pvCb6hK18MMmaU79vL5SPm5WdiysZCs2dcDkjqj5o3\"]},\"/home/youssef/voting-smartcontracts/contracts/VotingFactory.sol\":{\"keccak256\":\"0x3551bddd27b0d9a423daddd8e7bdd9073ea8ba8c3d9f0813314922b276b6daf4\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://d291cdabedae8fe18e53f6ca8cf924af4367d56350fe3bd51e70d34ab3b4e7c4\",\"dweb:/ipfs/QmfS2PdUk8cD7MRVErFEFjBYJZU7FAY2gySRY9Fo98Ss69\"]}},\"version\":1}",
@@ -3261,12 +3264,13 @@
     "2018": {
       "events": {},
       "links": {},
-      "address": "0x4245CF4518CB2C280f5e9c6a03c90C147F80B4d9",
-      "transactionHash": "0xc69c30d4f9319b418de3454447ec1e2c54a86151d7bdddeab7e5105cc5094809"
+      "address": "0x9a3DBCa554e9f6b9257aAa24010DA8377C57c17e",
+      "transactionHash": "0xa2a41c1cb27d9612e3f71e5d4f6b11f0fee5f136dfa765d95ce6ac4c69601fe3"
     }
   },
   "schemaVersion": "3.2.0",
-  "updatedAt": "2020-09-30T09:17:34.610Z",
+  "updatedAt": "2020-09-30T13:50:43.551Z",
+  "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",
     "methods": {

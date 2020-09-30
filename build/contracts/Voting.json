@@ -14964,7 +14964,7 @@
   },
   "networks": {},
   "schemaVersion": "3.2.0",
-  "updatedAt": "2020-09-30T09:17:34.601Z",
+  "updatedAt": "2020-09-30T13:49:35.093Z",
   "devdoc": {
     "details": "This contract is not deployed Initially but is created by VotingFactory",
     "kind": "dev",
