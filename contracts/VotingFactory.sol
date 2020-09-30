@@ -4,7 +4,6 @@ pragma solidity ^0.7.0;
 import "./Voting.sol";
 
 /// @title Factory Contract for creating voting campaigns
-/// @author Youssef Alaa
 contract VotingFactory {
     //holds the info of each voting campaign
     struct Campaign {

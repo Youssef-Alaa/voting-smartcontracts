@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.7.0;
 
-/// @author Youssef Alaa
 /// @title Voting contract for managing each voting process
 /// @dev This contract is not deployed Initially but is created by VotingFactory
 contract Voting{
